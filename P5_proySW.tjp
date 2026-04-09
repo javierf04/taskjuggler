@@ -82,6 +82,14 @@ resource dev4 "Javier Freire" {
 # work and have resources allocated to them. Many attributes of tasks
 # are inherited from the enclosing task. This saves you a lot of typing.
 task WMGame "Web & Mobile Game" {
+   # All work-related costs will be booked to this account unless the
+  # subtasks specify something different.
+  chargeset manag
+  
+  # For the duration of the project we have running cost that are not
+  # included in the labor cost.
+  charge 60 perday
+  responsible boss
   task tmobileF "Mobile Front End" {
     purge chargeset
     chargeset mFront
@@ -133,14 +141,7 @@ task WMGame "Web & Mobile Game" {
       depends WMGame.twebF, WMGame.tback, WMGame.tmobileF, WMGame.tcloud
   }
 
-  # All work-related costs will be booked to this account unless the
-  # subtasks specify something different.
-  chargeset manag
-  
-  # For the duration of the project we have running cost that are not
-  # included in the labor cost.
-  charge 60 perday
-  responsible boss
+
 
   task tgdesign "General System Design" {
       effort 2d
