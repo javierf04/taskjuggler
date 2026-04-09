@@ -20,7 +20,7 @@ project pSix "Web Game"  2025-12-15 +5m {
   # used, but this will likely be outside of the project range, so it
   # can't be seen in the reports.
   now 2026-04-09-12:00
-  # The currency for all money values is the US Dollar.
+  # The currency for all money values is the US Dollar
   currency "EUR"
 
   # We want to compare the baseline scenario to one with the current one.
