@@ -128,7 +128,7 @@ task WMGame "Web & Mobile Game" {
       start 2026-05-15
       effort 10d
       allocate boss
-      allocate dev2 dev4
+      allocate dev2, dev4
       actual:effort 20d
       depends WMGame.twebF, WMGame.tback, WMGame.tmobileF, WMGame.tcloud
   }
