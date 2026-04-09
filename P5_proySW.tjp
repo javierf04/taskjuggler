@@ -19,7 +19,7 @@ project pSix "Web Game"  2025-12-15 +5m {
   # the project reports. If not specified, the current day will be
   # used, but this will likely be outside of the project range, so it
   # can't be seen in the reports.
-  now 2026-02-25-13:00
+  now 2026-04-09-12:00
   # The currency for all money values is the US Dollar.
   currency "EUR"
 
@@ -69,12 +69,69 @@ resource dev3 "Peter Green" {
   email "kkk@unizar.es"
 }
 
+resource dev4 "Javier Freire" {
+  email "871197@unizar.es"
+  # Dedicación de 4 horas al día
+  limits { dailymax 4h }
+  rate 50 # Un coste menor por ser un recurso de apoyo
+}
+
 # Now we specify the work packages. The whole project is described as
 # a task that contains subtasks. These subtasks are then broken down
 # into smaller tasks and so on. The innermost tasks describe the real
 # work and have resources allocated to them. Many attributes of tasks
 # are inherited from the enclosing task. This saves you a lot of typing.
 task WMGame "Web & Mobile Game" {
+  task tmobileF "Mobile Front End" {
+    purge chargeset
+    chargeset mFront
+    responsible dev4
+    depends WMGame.tback.tBEd
+    
+    task tMGUId "Mobile GUI Design" {
+      effort 7d
+      allocate dev2
+    }
+    
+    task tMFEd "Mobile Development" {
+      effort 15d
+      allocate dev2, dev3
+      depends WMGame.tmobileF.tMGUId
+    }
+  }
+
+  task tcloud "Cloud Support & Deployment" {
+    purge chargeset
+    chargeset back
+    responsible dev1
+    depends WMGame.tback.tbackDev
+    
+    task tCloudEval "Cloud Provider Evaluation" {
+      effort 3d
+      allocate dev1, boss
+      journalentry 2026-04-09 "Decisión sobre proveedor de infraestructura" {
+        author boss
+        alert green
+        summary "Se ha seleccionado AWS como proveedor principal tras la comparativa de costes."
+        details "La decisión se basa en la compatibilidad con las herramientas de despliegue actuales y el presupuesto disponible."
+      }
+    }
+    
+    task tCloudSetup "Infrastructure Setup & Deploy" {
+      effort 5d
+      allocate dev1
+      depends WMGame.tcloud.tCloudEval
+    }
+  }
+
+  task ttest "Acceptance tests" {
+      start 2026-05-15
+      effort 10d
+      allocate boss
+      allocate dev2 dev4
+      actual:effort 20d
+      depends WMGame.twebF, WMGame.tback, WMGame.tmobileF, WMGame.tcloud
+  }
 
   # All work-related costs will be booked to this account unless the
   # subtasks specify something different.
@@ -237,6 +294,12 @@ textreport frame "" {
     ->8-
   }
 
+  textreport "InitialPlan" {
+    formats html
+    title "Planificación Inicial"
+    center '<[report id="planInicial"]>'
+  }
+
   textreport development "Development" {
     formats html
     center '<[report id="development"]>'
@@ -270,6 +333,22 @@ taskreport overview "" {
   caption 'All effort values are in man days.'
 }
 
+taskreport planInicial "" {
+  scenarios plan, actual
+  headline "Comparativa de Planificación: Inicial vs. Actual"
+  
+  columns bsi { title 'WBS' }, 
+          name, 
+          start { title "Inicio Plan" }, 
+          actual:start { title "Inicio Real" },
+          end { title "Fin Plan" }, 
+          actual:end { title "Fin Real" },
+          chart { ${TaskTip} scale day width 500 }
+
+  timeformat "%Y-%m-%d"
+  loadunit days
+  hideresource @all
+}
 
 # Macro to set the background color of a cell according to the alert
 # level of the task.
