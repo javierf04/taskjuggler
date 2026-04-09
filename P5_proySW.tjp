@@ -5,7 +5,7 @@
  * some elements of it
  */
 
-project pSix "Web Game"  2025-12-15 +5m {
+project pSix "Web Game"  2025-12-15 +6m {
   # Set the default time zone for the project. If not specified, UTC
   # is used.
   timezone "Europe/Paris"
@@ -19,8 +19,8 @@ project pSix "Web Game"  2025-12-15 +5m {
   # the project reports. If not specified, the current day will be
   # used, but this will likely be outside of the project range, so it
   # can't be seen in the reports.
-  now 2026-04-09-12:00
-  # The currency for all money values is the US Dollar
+  now 2026-04-09-13:00
+  # The currency for all money values is the US Dollar.
   currency "EUR"
 
   # We want to compare the baseline scenario to one with the current one.
@@ -47,6 +47,7 @@ account cost "Project Cost" {
   account wFront "Web Front-End"
   account mFront "Mobile Front-end"
   account back "Back-End"
+  account cloud "Cloud Deployment"
 }
 account rev "Payments"
 # The Profit&Loss analysis should be rev - cost accounts.
@@ -68,12 +69,9 @@ resource dev2 "Samantha Müller" {
 resource dev3 "Peter Green" {
   email "kkk@unizar.es"
 }
-
 resource dev4 "Javier Freire" {
   email "871197@unizar.es"
-  # Dedicación de 4 horas al día
   limits { dailymax 4h }
-  rate 50 # Un coste menor por ser un recurso de apoyo
 }
 
 # Now we specify the work packages. The whole project is described as
@@ -82,7 +80,8 @@ resource dev4 "Javier Freire" {
 # work and have resources allocated to them. Many attributes of tasks
 # are inherited from the enclosing task. This saves you a lot of typing.
 task WMGame "Web & Mobile Game" {
-   # All work-related costs will be booked to this account unless the
+
+  # All work-related costs will be booked to this account unless the
   # subtasks specify something different.
   chargeset manag
   
@@ -90,56 +89,15 @@ task WMGame "Web & Mobile Game" {
   # included in the labor cost.
   charge 60 perday
   responsible boss
+
   task tgdesign "General System Design" {
-    effort 2d
-    allocate boss
-    depends WMGame.deliveries.start
+      effort 2d
+      allocate boss
+      depends WMGame.deliveries.start
   }
-  task tmobileF "Mobile Front End" {
-    purge chargeset
-    chargeset mFront
-    responsible dev4
-    depends WMGame.tback.tBEd
-    
-    task tMGUId "Mobile GUI Design" {
-      effort 7d
-      allocate dev2
-    }
-    
-    task tMFEd "Mobile Development" {
-      effort 15d
-      allocate dev2, dev3
-      depends WMGame.tmobileF.tMGUId
-    }
-  }
-
-  task tcloud "Cloud Support & Deployment" {
-    purge chargeset
-    chargeset back
-    responsible dev1
-    depends WMGame.tback.tbackDev
-    
-    task tCloudEval "Cloud Provider Evaluation" {
-      effort 3d
-      allocate dev1, boss
-      journalentry 2026-04-09 "Decisión sobre proveedor de infraestructura" {
-        author boss
-        alert green
-        summary "Se ha seleccionado AWS como proveedor principal tras la comparativa de costes."
-        details "La decisión se basa en la compatibilidad con las herramientas de despliegue actuales y el presupuesto disponible."
-      }
-    }
-    
-    task tCloudSetup "Infrastructure Setup & Deploy" {
-      effort 5d
-      allocate dev1
-      depends WMGame.tcloud.tCloudEval
-    }
-  }
-
 
   task tback "Back End" {
-    # It is necessary to “purge” the “chargeset” because it has been assigned previously to other variable 
+    # It is necessary to "purge" the "chargeset" because it has been assigned previously to other variable 
     purge chargeset
     chargeset back
     responsible dev1
@@ -194,13 +152,66 @@ task WMGame "Web & Mobile Game" {
     }    
   }
 
+  # Nueva tarea de primer nivel: Mobile Frontend
+  task tmobileF "Mobile Front End" {
+    purge chargeset
+    chargeset mFront
+    responsible dev4
+    depends WMGame.tback.tBEd
+    task tMGUId "Mobile GUI Design" {
+      effort 7d
+      allocate dev3, dev4
+      journalentry 2026-04-09 "Starting mobile GUI design phase" {
+        author dev4
+        alert green
+        summary "Mobile GUI design phase begins. Adapting web designs for mobile use cases."
+      }
+    }
+    task tMFEc "Mobile Front End Construction" {
+      effort 18d
+      allocate dev2, dev4
+      depends WMGame.tmobileF.tMGUId
+    }
+    task tMFEt "Mobile Front End Test" {
+      effort 8d
+      allocate dev1, dev4
+      depends WMGame.tmobileF.tMFEc
+    }
+  }
+
+  # Nueva tarea de primer nivel: Cloud Deployment del Back End
+  task tcloud "Cloud Deployment" {
+    purge chargeset
+    chargeset cloud
+    responsible dev1
+    depends WMGame.tback
+    task tCloudEval "Cloud Provider Evaluation" {
+      effort 3d
+      allocate boss, dev4
+    }
+    task tCloudSetup "Cloud Infrastructure Setup" {
+      effort 5d
+      allocate dev1, dev4
+      depends WMGame.tcloud.tCloudEval
+    }
+    task tCloudDeploy "Back End Deployment" {
+      effort 4d
+      allocate dev1, dev4
+      depends WMGame.tcloud.tCloudSetup
+    }
+  }
+
   task ttest "Acceptance tests" {
-      start 2026-05-15
       effort 10d
       allocate boss
-      allocate dev2, dev4
+      allocate dev2
       actual:effort 20d
-      depends WMGame.twebF, WMGame.tback, WMGame.tmobileF, WMGame.tcloud
+      # Las pruebas de aceptación no pueden empezar antes del 15 de mayo
+      actual:start 2026-05-15
+      depends WMGame.twebF
+      depends WMGame.tback
+      depends WMGame.tmobileF
+      depends WMGame.tcloud
       }
 
     
@@ -270,6 +281,12 @@ textreport frame "" {
     formats html
     center '<[report id="overview"]>'
   }
+
+  # Informe adicional: planificación inicial (escenario plan)
+  textreport initialPlan "Initial Plan" {
+    formats html
+    center '<[report id="initialPlanReport"]>'
+  }
   
   textreport "Status" {
     formats html
@@ -282,12 +299,6 @@ textreport frame "" {
       ----
       <[report id="status.future"]>
     ->8-
-  }
-
-  textreport "InitialPlan" {
-    formats html
-    title "Planificación Inicial"
-    center '<[report id="planInicial"]>'
   }
 
   textreport development "Development" {
@@ -323,22 +334,20 @@ taskreport overview "" {
   caption 'All effort values are in man days.'
 }
 
-taskreport planInicial "" {
-  scenarios plan, actual
-  headline "Comparativa de Planificación: Inicial vs. Actual"
-  
-  columns bsi { title 'WBS' }, 
-          name, 
-          start { title "Inicio Plan" }, 
-          actual:start { title "Inicio Real" },
-          end { title "Fin Plan" }, 
-          actual:end { title "Fin Real" },
-          chart { ${TaskTip} scale day width 500 }
-
-  timeformat "%Y-%m-%d"
+# Informe adicional: planificación inicial (escenario plan)
+taskreport initialPlanReport "" {
+  scenarios plan
+  headline "Initial Project Plan"
+  columns bsi { title 'WBS' },
+          name, start, end, effort, cost,
+          revenue, chart { ${TaskTip} }
+  timeformat "%a %Y-%m-%d"
   loadunit days
   hideresource @all
+  balance cost rev
+  caption 'Initial plan. All effort values are in man days.'
 }
+
 
 # Macro to set the background color of a cell according to the alert
 # level of the task.
